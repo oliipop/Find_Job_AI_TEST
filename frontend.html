@@ -1,68 +1,422 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>本地求职信息检索系统</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; padding: 40px; color: #333; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        h1 { margin-bottom: 20px; color: #2c3e50; }
-        .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
-        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; }
-        button { padding: 12px 25px; background: #4a90e2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #357abd; }
-        .job-card { border-bottom: 1px solid #eee; padding: 15px 0; }
-        .job-card:last-child { border-bottom: none; }
-        .job-title { font-size: 18px; font-weight: bold; color: #333; }
-        .job-salary { color: #e74c3c; font-weight: bold; float: right; }
-        .job-meta { color: #888; font-size: 14px; margin: 8px 0; }
-        .job-link { display: inline-block; margin-top: 8px; color: #4a90e2; text-decoration: none; font-size: 14px; }
-        .job-link:hover { text-decoration: underline; }
-        .empty-msg { text-align: center; color: #aaa; padding: 40px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北京岗位信息查找系统</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+    min-height: 100vh;
+    color: #2c3e50;
+  }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 20px; }
+  header {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: #fff;
+    padding: 28px 32px;
+    border-radius: 14px;
+    box-shadow: 0 6px 20px rgba(30,60,114,0.25);
+    margin-bottom: 24px;
+  }
+  header h1 { font-size: 26px; margin-bottom: 6px; letter-spacing: 1px; }
+  header p { font-size: 14px; opacity: 0.88; }
+  .search-panel {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px 20px;
+  }
+  .form-item label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 6px;
+  }
+  .form-item label::before {
+    content: "";
+    display: inline-block;
+    width: 3px; height: 13px;
+    background: #2a5298;
+    margin-right: 6px;
+    vertical-align: -1px;
+    border-radius: 2px;
+  }
+  .form-item input, .form-item select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d9dfe6;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
+    background: #fafbfc;
+  }
+  .form-item input:focus, .form-item select:focus {
+    outline: none;
+    border-color: #2a5298;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(42,82,152,0.12);
+  }
+  .btn-row {
+    margin-top: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(42,82,152,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(42,82,152,0.4); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+  .btn-reset { background: #f0f2f5; color: #555; }
+  .btn-reset:hover { background: #e4e7eb; }
+  .tip { font-size: 13px; color: #888; margin-left: 8px; }
+
+  .status-bar {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-size: 14px;
+  }
+  .status-bar .count { color: #2a5298; font-weight: 700; font-size: 16px; }
+  .loading {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+  }
+  .spinner {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border: 3px solid #e4e7eb;
+    border-top-color: #2a5298;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 10px;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .job-list { display: flex; flex-direction: column; gap: 14px; }
+  .job-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+    border-left: 4px solid #2a5298;
+  }
+  .job-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+  }
+  .job-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e3c72;
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+  .job-title a { color: inherit; text-decoration: none; }
+  .job-title a:hover { color: #2a5298; text-decoration: underline; }
+  .job-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 10px;
+  }
+  .job-meta span { display: inline-flex; align-items: center; gap: 4px; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+  .tag-type { background: #e8f0fe; color: #1e3c72; }
+  .tag-district { background: #e6f7ee; color: #0a7a3b; }
+  .tag-salary { background: #fff4e5; color: #b86d00; }
+  .tag-source { background: #f3e8ff; color: #6b21a8; }
+  .job-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+    font-size: 13px;
+  }
+  .job-date { color: #999; }
+  .job-link {
+    display: inline-block;
+    padding: 6px 16px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: #fff !important;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+  .job-link:hover { opacity: 0.9; transform: scale(1.03); }
+
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    background: #fff;
+    border-radius: 12px;
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .sites-info {
+    margin-top: 24px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+  .sites-info h3 { font-size: 15px; color: #333; margin-bottom: 12px; }
+  .sites-info ul { list-style: none; }
+  .sites-info li {
+    padding: 6px 0;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px dashed #f0f0f0;
+  }
+  .sites-info li:last-child { border-bottom: none; }
+  .sites-info a { color: #2a5298; text-decoration: none; }
+  .sites-info a:hover { text-decoration: underline; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 本地求职信息检索系统</h1>
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="输入岗位需求，例如：Python 后端开发" value="Python">
-            <button onclick="searchJobs()">搜索岗位</button>
-        </div>
-        <div id="jobList"><div class="empty-msg">输入关键词开始搜索...</div></div>
-    </div>
+<div class="container">
+  <header>
+    <h1>🏢 北京岗位信息查找系统</h1>
+    <p>实时爬取北京政府/高校/国企官方招聘网站，助您快速找到合适岗位</p>
+  </header>
 
-    <script>
-        async function searchJobs() {
-            const query = document.getElementById('searchInput').value.trim();
-            const listEl = document.getElementById('jobList');
-            if (!query) return;
-            
-            listEl.innerHTML = '<div class="empty-msg">正在检索中...</div>';
-            
-            try {
-                // 请求本地 Python 后端 API
-                const response = await fetch(`http://127.0.0.1:8000/api/search?query=${encodeURIComponent(query)}`);
-                const result = await response.json();
-                
-                if (result.code === 200 && result.data.length > 0) {
-                    listEl.innerHTML = result.data.map(job => `
-                        <div class="job-card">
-                            <span class="job-salary">${job.salary}</span>
-                            <div class="job-title">${job.position}</div>
-                            <div class="job-meta">
-                                🏢 ${job.company} | 📍 ${job.area} | 💼 ${job.experience} | 🎓 ${job.degree}
-                            </div>
-                            <a class="job-link" href="${job.link}" target="_blank">🔗 查看网页详情</a>
-                        </div>
-                    `).join('');
-                } else {
-                    listEl.innerHTML = '<div class="empty-msg">未找到相关岗位，请尝试其他关键词</div>';
-                }
-            } catch (error) {
-                listEl.innerHTML = '<div class="empty-msg" style="color:red;">请求失败，请确保 Python 后端已启动！</div>';
-            }
-        }
-    </script>
+  <div class="search-panel">
+    <div class="form-grid">
+      <div class="form-item">
+        <label>应聘岗位 / 关键词</label>
+        <input type="text" id="keyword" placeholder="如：教师、医生、工程师、会计、管理（多词空格分隔）">
+      </div>
+      <div class="form-item">
+        <label>意向地区</label>
+        <select id="district">
+          <option value="不限">不限 / 北京全市</option>
+          <option value="东城">东城区</option>
+          <option value="西城">西城区</option>
+          <option value="朝阳">朝阳区</option>
+          <option value="海淀">海淀区</option>
+          <option value="丰台">丰台区</option>
+          <option value="石景山">石景山区</option>
+          <option value="通州">通州区</option>
+          <option value="昌平">昌平区</option>
+          <option value="大兴">大兴区</option>
+          <option value="顺义">顺义区</option>
+          <option value="房山">房山区</option>
+          <option value="门头沟">门头沟区</option>
+          <option value="怀柔">怀柔区</option>
+          <option value="平谷">平谷区</option>
+          <option value="密云">密云区</option>
+          <option value="延庆">延庆区</option>
+          <option value="亦庄">经开区 / 亦庄</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label>薪资要求</label>
+        <select id="salary">
+          <option value="0">不限</option>
+          <option value="5">5k 以上</option>
+          <option value="8">8k 以上</option>
+          <option value="10">10k 以上</option>
+          <option value="15">15k 以上</option>
+          <option value="20">20k 以上</option>
+          <option value="30">30k 以上</option>
+        </select>
+      </div>
+      <div class="form-item">
+        <label>岗位类型</label>
+        <select id="job_type">
+          <option value="不限">不限</option>
+          <option value="事业单位">事业单位</option>
+          <option value="国有企业">国有企业</option>
+          <option value="高校教师">高校教师</option>
+          <option value="高校岗位">高校岗位（其他）</option>
+          <option value="科研">科研/高层次人才</option>
+          <option value="医疗卫生">医疗卫生</option>
+          <option value="教育系统">教育系统（中小学等）</option>
+        </select>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">🔍 开始查找</button>
+      <button class="btn btn-reset" onclick="resetForm()">重置</button>
+      <span class="tip">提示：首次搜索需联网爬取各官方网站，约需 10~20 秒</span>
+    </div>
+  </div>
+
+  <div id="resultArea"></div>
+
+  <div class="sites-info">
+    <h3>📡 数据来源（官方公开招聘网站）</h3>
+    <ul id="siteList"><li>加载中...</li></ul>
+  </div>
+</div>
+
+<script>
+async function loadSites() {
+  try {
+    const resp = await fetch('/api/sites');
+    const data = await resp.json();
+    const ul = document.getElementById('siteList');
+    ul.innerHTML = data.sites.map(s =>
+      `<li>🔗 <strong>${s.name}</strong> —— ${s.desc}　<a href="${s.url}" target="_blank">${s.url}</a></li>`
+    ).join('');
+  } catch(e) {
+    document.getElementById('siteList').innerHTML = '<li>无法加载站点信息，请确认后端已启动</li>';
+  }
+}
+
+function resetForm() {
+  document.getElementById('keyword').value = '';
+  document.getElementById('district').value = '不限';
+  document.getElementById('salary').value = '0';
+  document.getElementById('job_type').value = '不限';
+  document.getElementById('resultArea').innerHTML = '';
+}
+
+async function doSearch() {
+  const btn = document.getElementById('searchBtn');
+  const resultArea = document.getElementById('resultArea');
+  const params = {
+    keyword: document.getElementById('keyword').value.trim(),
+    district: document.getElementById('district').value,
+    salary_min: parseFloat(document.getElementById('salary').value) || 0,
+    job_type: document.getElementById('job_type').value,
+  };
+
+  btn.disabled = true;
+  btn.textContent = '⏳ 正在爬取官方网站...';
+  resultArea.innerHTML = `
+    <div class="loading">
+      <span class="spinner"></span>正在联网抓取北京市人社局、北工大、市国资委、首都之窗等官方招聘信息，请稍候...
+    </div>`;
+
+  try {
+    const resp = await fetch('/api/search', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(params)
+    });
+    const data = await resp.json();
+    renderResults(data, params);
+  } catch(e) {
+    resultArea.innerHTML = `<div class="empty"><div class="empty-icon">⚠️</div>请求失败：${e.message}<br>请确认后端服务已启动（python backend.py）</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 开始查找';
+  }
+}
+
+function renderResults(data, params) {
+  const resultArea = document.getElementById('resultArea');
+  const jobs = data.jobs || [];
+
+  let condStr = [];
+  if (params.keyword) condStr.push(`关键词「${params.keyword}」`);
+  if (params.district && params.district !== '不限') condStr.push(`地区「${params.district}」`);
+  if (params.salary_min > 0) condStr.push(`薪资 ${params.salary_min}k 以上`);
+  if (params.job_type && params.job_type !== '不限') condStr.push(`类型「${params.job_type}」`);
+  const condText = condStr.length ? condStr.join('，') : '全部岗位';
+
+  if (jobs.length === 0) {
+    resultArea.innerHTML = `
+      <div class="status-bar">
+        <div>共爬取 <span class="count">${data.total_crawled}</span> 条岗位，筛选条件：${condText}</div>
+      </div>
+      <div class="empty">
+        <div class="empty-icon">🔍</div>
+        <div>没有找到符合条件的岗位</div>
+        <div style="margin-top:8px;font-size:13px;">建议：减少关键词、放宽地区或薪资条件后重试</div>
+      </div>`;
+    return;
+  }
+
+  const html = jobs.map(j => `
+    <div class="job-card">
+      <div class="job-title">
+        <a href="${j.url}" target="_blank" rel="noopener">${escapeHtml(j.title)}</a>
+      </div>
+      <div class="job-meta">
+        <span>🏢 ${escapeHtml(j.company)}</span>
+      </div>
+      <div>
+        <span class="tag tag-type">${escapeHtml(j.type)}</span>
+        <span class="tag tag-district">📍 ${escapeHtml(j.district)}</span>
+        <span class="tag tag-salary">💰 ${escapeHtml(j.salary)}</span>
+        <span class="tag tag-source">📡 ${escapeHtml(j.source)}</span>
+      </div>
+      <div class="job-footer">
+        <span class="job-date">📅 发布日期：${j.date || '详见公告'}</span>
+        <a class="job-link" href="${j.url}" target="_blank" rel="noopener">查看详情 →</a>
+      </div>
+    </div>
+  `).join('');
+
+  resultArea.innerHTML = `
+    <div class="status-bar">
+      <div>共爬取 <span class="count">${data.total_crawled}</span> 条岗位，匹配 <span class="count">${data.total}</span> 条（${condText}）</div>
+      <div style="font-size:12px;color:#999;">点击"查看详情"跳转至官方招聘公告页</div>
+    </div>
+    <div class="job-list">${html}</div>`;
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+// 回车搜索
+document.getElementById('keyword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+loadSites();
+</script>
 </body>
 </html>
+<!--02798082692573747210091316-->
