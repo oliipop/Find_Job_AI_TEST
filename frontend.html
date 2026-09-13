@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地求职信息检索系统</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f4f7f6; padding: 40px; color: #333; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h1 { margin-bottom: 20px; color: #2c3e50; }
+        .search-box { display: flex; gap: 10px; margin-bottom: 30px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; outline: none; }
+        button { padding: 12px 25px; background: #4a90e2; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #357abd; }
+        .job-card { border-bottom: 1px solid #eee; padding: 15px 0; }
+        .job-card:last-child { border-bottom: none; }
+        .job-title { font-size: 18px; font-weight: bold; color: #333; }
+        .job-salary { color: #e74c3c; font-weight: bold; float: right; }
+        .job-meta { color: #888; font-size: 14px; margin: 8px 0; }
+        .job-link { display: inline-block; margin-top: 8px; color: #4a90e2; text-decoration: none; font-size: 14px; }
+        .job-link:hover { text-decoration: underline; }
+        .empty-msg { text-align: center; color: #aaa; padding: 40px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 本地求职信息检索系统</h1>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="输入岗位需求，例如：Python 后端开发" value="Python">
+            <button onclick="searchJobs()">搜索岗位</button>
+        </div>
+        <div id="jobList"><div class="empty-msg">输入关键词开始搜索...</div></div>
+    </div>
+
+    <script>
+        async function searchJobs() {
+            const query = document.getElementById('searchInput').value.trim();
+            const listEl = document.getElementById('jobList');
+            if (!query) return;
+            
+            listEl.innerHTML = '<div class="empty-msg">正在检索中...</div>';
+            
+            try {
+                // 请求本地 Python 后端 API
+                const response = await fetch(`http://127.0.0.1:8000/api/search?query=${encodeURIComponent(query)}`);
+                const result = await response.json();
+                
+                if (result.code === 200 && result.data.length > 0) {
+                    listEl.innerHTML = result.data.map(job => `
+                        <div class="job-card">
+                            <span class="job-salary">${job.salary}</span>
+                            <div class="job-title">${job.position}</div>
+                            <div class="job-meta">
+                                🏢 ${job.company} | 📍 ${job.area} | 💼 ${job.experience} | 🎓 ${job.degree}
+                            </div>
+                            <a class="job-link" href="${job.link}" target="_blank">🔗 查看网页详情</a>
+                        </div>
+                    `).join('');
+                } else {
+                    listEl.innerHTML = '<div class="empty-msg">未找到相关岗位，请尝试其他关键词</div>';
+                }
+            } catch (error) {
+                listEl.innerHTML = '<div class="empty-msg" style="color:red;">请求失败，请确保 Python 后端已启动！</div>';
+            }
+        }
+    </script>
+</body>
+</html>
